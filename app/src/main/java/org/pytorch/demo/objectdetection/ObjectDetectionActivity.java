@@ -2,12 +2,14 @@ package org.pytorch.demo.objectdetection;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.media.Image;
 import android.util.Log;
+import android.util.Pair;
 import android.view.TextureView;
 import android.view.ViewStub;
 
@@ -96,7 +98,10 @@ public class ObjectDetectionActivity extends AbstractCameraXActivity<ObjectDetec
         Matrix matrix = new Matrix();
         matrix.postRotate(90.0f);
         bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-        Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, PrePostProcessor.mInputWidth, PrePostProcessor.mInputHeight, true);
+//        Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, PrePostProcessor.mInputWidth, PrePostProcessor.mInputHeight, true);
+        Pair<Integer, Integer> newShape = new Pair<>(PrePostProcessor.mInputWidth, PrePostProcessor.mInputHeight);
+        Triple<Integer, Integer, Integer> color = new Triple<>(114, 114, 114);
+        Bitmap resizedBitmap = this.letterbox(bitmap, newShape, color, true, true, true, 32);
 
         final Tensor inputTensor = TensorImageUtils.bitmapToFloat32Tensor(resizedBitmap, PrePostProcessor.NO_MEAN_RGB, PrePostProcessor.NO_STD_RGB);
         IValue[] outputTuple = mModule.forward(IValue.from(inputTensor)).toTuple();
@@ -110,5 +115,75 @@ public class ObjectDetectionActivity extends AbstractCameraXActivity<ObjectDetec
 
         final ArrayList<Result> results = PrePostProcessor.outputsToNMSPredictions(outputs, imgScaleX, imgScaleY, ivScaleX, ivScaleY, 0, 0);
         return new AnalysisResult(results);
+    }
+
+    /**
+     * Image augmentations: first scale the image and later padding image,  increase the strength of the model.
+     * Always this scale and padding will make the image object detection gave more high probability or more robust.
+     * <p>
+     * Reference:
+     * https://github.com/ultralytics/yolov5/blob/db6ec66a602a0b64a7db1711acd064eda5daf2b3/utils/augmentations.py#L91-L122
+     * def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True, stride=32):
+     * method
+     *
+     * @param srcBitmap
+     * @param newShape  (640*640)
+     * @param color     always gray (114,114,114)
+     * @param auto      default:false, no use
+     * @param scaleFill default:false,  no use
+     * @param scaleUp   default:false
+     * @param stride    default:32 , no use
+     * @return
+     */
+    private Bitmap letterbox(Bitmap srcBitmap, Pair<Integer, Integer> newShape, Triple<Integer, Integer, Integer> color, Boolean auto,
+                                   Boolean scaleFill, Boolean scaleUp, int stride) {
+        // current shape
+        int currentWidth = srcBitmap.getWidth();
+        int currentHeight = srcBitmap.getHeight();
+
+        // new shape eg: 640*640
+        int newWidth = newShape.first;
+        int newHeight = newShape.second;
+
+        // only scale image，no padding,just return scale image
+        // I modify this logic something difference with the python code clean & speed.
+        if (scaleFill) {
+            // filter =  bilinear filtering
+            return Bitmap.createScaledBitmap(srcBitmap, newWidth, newHeight, true);
+        }
+
+        // Scale ratio (new / old)
+        float r = Math.min(newWidth * 1.0f / currentWidth, newHeight * 1.0f / currentHeight);
+
+        //  Only scale down, do not scale up (for better val mAP)
+        if (!scaleUp) {
+            r = Math.min(r, 1.0f);
+        }
+
+        int newUnpadWidth = Math.round(currentWidth * r);
+        int newUnpadHeight = Math.round(currentHeight * r);
+
+        //  wh padding
+        int dw = newWidth - newUnpadWidth;
+        int dh = newHeight - newUnpadHeight;
+
+        // auto always false, no use for android demo
+        if (auto) { // # wh padding
+            dw = dw % stride;
+            dh = dh % stride;
+        }
+
+        // resize
+        if (!(currentWidth == newUnpadWidth && currentHeight == newUnpadHeight)) {
+            srcBitmap = Bitmap.createScaledBitmap(srcBitmap, newUnpadWidth, newUnpadHeight, true);
+        }
+
+        // padding with gray color
+        Bitmap outBitmap = Bitmap.createBitmap(srcBitmap.getWidth() + dw, srcBitmap.getHeight() + dh, Bitmap.Config.ARGB_8888);
+        Canvas can = new Canvas(outBitmap);
+        can.drawRGB(color.getFirst(), color.getSecond(), color.getThird()); // gray color
+        can.drawBitmap(srcBitmap, dw, dh, null);
+
+        return outBitmap;
     }
 }

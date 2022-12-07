@@ -13,18 +13,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 
-class Result {
-    int classIndex;
-    Float score;
-    Rect rect;
-
-    public Result(int cls, Float output, Rect rect) {
-        this.classIndex = cls;
-        this.score = output;
-        this.rect = rect;
-    }
-};
-
 public class PrePostProcessor {
     // for yolov5 model, no need to apply MEAN and STD
     static float[] NO_MEAN_RGB = new float[] {0.0f, 0.0f, 0.0f};
@@ -36,9 +24,11 @@ public class PrePostProcessor {
 
     // model output is of size 25200*(num_of_class+5)
     private static int mOutputRow = 25200; // as decided by the YOLOv5 model for input image of size 640*640
-    private static int mOutputColumn = 85; // left, top, right, bottom, score and 80 class probability
+    private static int mOutputColumn = 11; // left, top, right, bottom, score and 80 class probability. Cantidad de clases + 5
     private static float mThreshold = 0.30f; // score above which a detection is generated
-    private static int mNmsLimit = 15;
+    //Cambio de hiperparametros para mejorar deteccion. Segun https://github.com/pytorch/android-demo-app/issues/195
+    //    private static int mNmsLimit = 15;
+    private static int mNmsLimit = 300;
 
     static String[] mClasses;
 

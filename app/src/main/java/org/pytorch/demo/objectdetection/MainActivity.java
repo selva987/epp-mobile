@@ -19,11 +19,13 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.util.Pair;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -47,7 +49,17 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements Runnable {
     private int mImageIndex = 0;
-    private String[] mTestImages = {"test1.png", "test2.jpg", "test3.png"};
+    private String[] mTestImages = {
+            "test1.png",
+            "test2.jpg",
+            "test3.png",
+            "test4.png",
+            "test5.png",
+            "test6.JPG",
+            "test7.JPG",
+            "test8.jpg",
+            "test9.jpg",
+    };
 
     private ImageView mImageView;
     private ResultView mResultView;
@@ -181,7 +193,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         });
 
         try {
-            mModule = LiteModuleLoader.load(MainActivity.assetFilePath(getApplicationContext(), "yolov5s.torchscript.ptl"));
+            mModule = LiteModuleLoader.load(MainActivity.assetFilePath(getApplicationContext(), "yolov5x.torchscript.ptl"));
             BufferedReader br = new BufferedReader(new InputStreamReader(getAssets().open("classes.txt")));
             String line;
             List<String> classes = new ArrayList<>();
@@ -237,7 +249,10 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 
     @Override
     public void run() {
-        Bitmap resizedBitmap = Bitmap.createScaledBitmap(mBitmap, PrePostProcessor.mInputWidth, PrePostProcessor.mInputHeight, true);
+//        Bitmap resizedBitmap = Bitmap.createScaledBitmap(mBitmap, PrePostProcessor.mInputWidth, PrePostProcessor.mInputHeight, true);
+        Pair<Integer, Integer> newShape = new Pair<>(PrePostProcessor.mInputWidth, PrePostProcessor.mInputHeight);
+        Triple<Integer, Integer, Integer> color = new Triple<>(114, 114, 114);
+        Bitmap resizedBitmap = this.letterbox(mBitmap, newShape, color, true, true, true, 32);
         final Tensor inputTensor = TensorImageUtils.bitmapToFloat32Tensor(resizedBitmap, PrePostProcessor.NO_MEAN_RGB, PrePostProcessor.NO_STD_RGB);
         IValue[] outputTuple = mModule.forward(IValue.from(inputTensor)).toTuple();
         final Tensor outputTensor = outputTuple[0].toTensor();
@@ -252,5 +267,75 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             mResultView.invalidate();
             mResultView.setVisibility(View.VISIBLE);
         });
+    }
+
+    /**
+     * Image augmentations: first scale the image and later padding image,  increase the strength of the model.
+     * Always this scale and padding will make the image object detection gave more high probability or more robust.
+     * <p>
+     * Reference:
+     * https://github.com/ultralytics/yolov5/blob/db6ec66a602a0b64a7db1711acd064eda5daf2b3/utils/augmentations.py#L91-L122
+     * def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True, stride=32):
+     * method
+     *
+     * @param srcBitmap
+     * @param newShape  (640*640)
+     * @param color     always gray (114,114,114)
+     * @param auto      default:false, no use
+     * @param scaleFill default:false,  no use
+     * @param scaleUp   default:false
+     * @param stride    default:32 , no use
+     * @return
+     */
+    private Bitmap letterbox(Bitmap srcBitmap, Pair<Integer, Integer> newShape, Triple<Integer, Integer, Integer> color, Boolean auto,
+                             Boolean scaleFill, Boolean scaleUp, int stride) {
+        // current shape
+        int currentWidth = srcBitmap.getWidth();
+        int currentHeight = srcBitmap.getHeight();
+
+        // new shape eg: 640*640
+        int newWidth = newShape.first;
+        int newHeight = newShape.second;
+
+        // only scale image，no padding,just return scale image
+        // I modify this logic something difference with the python code clean & speed.
+        if (scaleFill) {
+            // filter =  bilinear filtering
+            return Bitmap.createScaledBitmap(srcBitmap, newWidth, newHeight, true);
+        }
+
+        // Scale ratio (new / old)
+        float r = Math.min(newWidth * 1.0f / currentWidth, newHeight * 1.0f / currentHeight);
+
+        //  Only scale down, do not scale up (for better val mAP)
+        if (!scaleUp) {
+            r = Math.min(r, 1.0f);
+        }
+
+        int newUnpadWidth = Math.round(currentWidth * r);
+        int newUnpadHeight = Math.round(currentHeight * r);
+
+        //  wh padding
+        int dw = newWidth - newUnpadWidth;
+        int dh = newHeight - newUnpadHeight;
+
+        // auto always false, no use for android demo
+        if (auto) { // # wh padding
+            dw = dw % stride;
+            dh = dh % stride;
+        }
+
+        // resize
+        if (!(currentWidth == newUnpadWidth && currentHeight == newUnpadHeight)) {
+            srcBitmap = Bitmap.createScaledBitmap(srcBitmap, newUnpadWidth, newUnpadHeight, true);
+        }
+
+        // padding with gray color
+        Bitmap outBitmap = Bitmap.createBitmap(srcBitmap.getWidth() + dw, srcBitmap.getHeight() + dh, Bitmap.Config.ARGB_8888);
+        Canvas can = new Canvas(outBitmap);
+        can.drawRGB(color.getFirst(), color.getSecond(), color.getThird()); // gray color
+        can.drawBitmap(srcBitmap, dw, dh, null);
+
+        return outBitmap;
     }
 }
