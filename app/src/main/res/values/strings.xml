@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Detección de EPP</string>
+    <string name="app_name">EPP App</string>
     <string name="image_view">Imagen</string>
     <string name="detect">Detectar</string>
     <string name="detect_epp">Detectar EPP</string>
