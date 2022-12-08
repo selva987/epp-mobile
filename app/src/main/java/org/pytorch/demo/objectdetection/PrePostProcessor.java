@@ -15,12 +15,12 @@ import java.util.Comparator;
 
 public class PrePostProcessor {
     // for yolov5 model, no need to apply MEAN and STD
-    static float[] NO_MEAN_RGB = new float[] {0.0f, 0.0f, 0.0f};
-    static float[] NO_STD_RGB = new float[] {1.0f, 1.0f, 1.0f};
+    public static float[] NO_MEAN_RGB = new float[] {0.0f, 0.0f, 0.0f};
+    public static float[] NO_STD_RGB = new float[] {1.0f, 1.0f, 1.0f};
 
     // model input image size
-    static int mInputWidth = 640;
-    static int mInputHeight = 640;
+    public static int mInputWidth = 640;
+    public static int mInputHeight = 640;
 
     // model output is of size 25200*(num_of_class+5)
     private static int mOutputRow = 25200; // as decided by the YOLOv5 model for input image of size 640*640
@@ -106,7 +106,7 @@ public class PrePostProcessor {
         return intersectionArea / (areaA + areaB - intersectionArea);
     }
 
-    static ArrayList<Result> outputsToNMSPredictions(float[] outputs, float imgScaleX, float imgScaleY, float ivScaleX, float ivScaleY, float startX, float startY) {
+    public static ArrayList<Result> outputsToNMSPredictions(float[] outputs, float imgScaleX, float imgScaleY, float ivScaleX, float ivScaleY, float startX, float startY) {
         ArrayList<Result> results = new ArrayList<>();
         for (int i = 0; i< mOutputRow; i++) {
             if (outputs[i* mOutputColumn +4] > mThreshold) {

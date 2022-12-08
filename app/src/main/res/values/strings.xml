@@ -1,9 +1,11 @@
 <resources>
-    <string name="app_name">YOLOv5</string>
-    <string name="image_view">Image View</string>
-    <string name="detect">Detect</string>
-    <string name="run_model">Running the model...</string>
-    <string name="restart">Restart</string>
-    <string name="select">Select</string>
-    <string name="live">Live</string>
+    <string name="app_name">Detección de EPP</string>
+    <string name="image_view">Imagen</string>
+    <string name="detect">Detectar</string>
+    <string name="detect_epp">Detectar EPP</string>
+    <string name="run_model">Detectando...</string>
+    <string name="restart">Reiniciar</string>
+    <string name="select">Seleccionar imagen</string>
+    <string name="live">Tiempo real</string>
+    <string name="live_epp">Tiempo real EPP</string>
 </resources>

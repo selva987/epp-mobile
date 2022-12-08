@@ -36,6 +36,10 @@ import org.pytorch.LiteModuleLoader;
 import org.pytorch.Module;
 import org.pytorch.Tensor;
 import org.pytorch.torchvision.TensorImageUtils;
+import org.ugd.epp.AlgoritmoDecision;
+import org.ugd.epp.EPPDetectionActivity;
+import org.ugd.epp.EPPResult;
+import org.ugd.epp.EPPResultView;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -62,7 +66,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     };
 
     private ImageView mImageView;
-    private ResultView mResultView;
+    private EPPResultView mResultView;
     private Button mButtonDetect;
     private ProgressBar mProgressBar;
     private Bitmap mBitmap = null;
@@ -170,6 +174,14 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             }
         });
 
+        final Button buttonLiveEpp = findViewById(R.id.liveEPPButton);
+        buttonLiveEpp.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+              final Intent intent = new Intent(MainActivity.this, EPPDetectionActivity.class);
+              startActivity(intent);
+            }
+        });
+
         mButtonDetect = findViewById(R.id.detectButton);
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
         mButtonDetect.setOnClickListener(new View.OnClickListener() {
@@ -258,12 +270,14 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         final Tensor outputTensor = outputTuple[0].toTensor();
         final float[] outputs = outputTensor.getDataAsFloatArray();
         final ArrayList<Result> results =  PrePostProcessor.outputsToNMSPredictions(outputs, mImgScaleX, mImgScaleY, mIvScaleX, mIvScaleY, mStartX, mStartY);
+        AlgoritmoDecision algo = new AlgoritmoDecision(results, false);
+        final ArrayList<EPPResult> eppResults = algo.getResultadosProcesados();
 
         runOnUiThread(() -> {
             mButtonDetect.setEnabled(true);
             mButtonDetect.setText(getString(R.string.detect));
             mProgressBar.setVisibility(ProgressBar.INVISIBLE);
-            mResultView.setResults(results);
+            mResultView.setResults(eppResults);
             mResultView.invalidate();
             mResultView.setVisibility(View.VISIBLE);
         });
