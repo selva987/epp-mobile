@@ -72,7 +72,8 @@ public class PrePostProcessor {
                 for (int j=i+1; j<boxes.size(); j++) {
                     if (active[j]) {
                         Result boxB = boxes.get(j);
-                        if (IOU(boxA.rect, boxB.rect) > threshold) {
+                        if ((boxA.classIndex == boxB.classIndex)
+                                && (IOU(boxA.rect, boxB.rect) > threshold)) {
                             active[j] = false;
                             numActive -= 1;
                             if (numActive <= 0) {
@@ -134,6 +135,7 @@ public class PrePostProcessor {
                 results.add(result);
             }
         }
+//        return results;
         return nonMaxSuppression(results, mNmsLimit, mThreshold);
     }
 }
