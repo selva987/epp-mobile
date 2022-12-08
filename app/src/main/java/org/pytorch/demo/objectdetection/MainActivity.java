@@ -66,11 +66,15 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     };
 
     private ImageView mImageView;
-    private EPPResultView mResultView;
+    private ResultView mResultView;
+    private EPPResultView mEppResultView;
     private Button mButtonDetect;
+    private Button mEppButtonDetect;
     private ProgressBar mProgressBar;
+    private ProgressBar mEppProgressBar;
     private Bitmap mBitmap = null;
     private Module mModule = null;
+    private boolean yolo;
     private float mImgScaleX, mImgScaleY, mIvScaleX, mIvScaleY, mStartX, mStartY;
 
     public static String assetFilePath(Context context, String assetName) throws IOException {
@@ -115,16 +119,21 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 
         mImageView = findViewById(R.id.imageView);
         mImageView.setImageBitmap(mBitmap);
+
         mResultView = findViewById(R.id.resultView);
         mResultView.setVisibility(View.INVISIBLE);
 
+        mEppResultView = findViewById(R.id.eppResultView);
+        mEppResultView.setVisibility(View.INVISIBLE);
+
         final Button buttonTest = findViewById(R.id.testButton);
-        buttonTest.setText(("Test Image 1/3"));
+        buttonTest.setText(String.format("Prueba 1/%d", mTestImages.length));
         buttonTest.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 mResultView.setVisibility(View.INVISIBLE);
+                mEppResultView.setVisibility(View.INVISIBLE);
                 mImageIndex = (mImageIndex + 1) % mTestImages.length;
-                buttonTest.setText(String.format("Text Image %d/%d", mImageIndex + 1, mTestImages.length));
+                buttonTest.setText(String.format("Prueba %d/%d", mImageIndex + 1, mTestImages.length));
 
                 try {
                     mBitmap = BitmapFactory.decodeStream(getAssets().open(mTestImages[mImageIndex]));
@@ -141,6 +150,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         buttonSelect.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 mResultView.setVisibility(View.INVISIBLE);
+                mEppResultView.setVisibility(View.INVISIBLE);
 
                 final CharSequence[] options = { "Choose from Photos", "Take Picture", "Cancel" };
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
@@ -187,6 +197,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         mButtonDetect.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 mButtonDetect.setEnabled(false);
+                mEppButtonDetect.setEnabled(false);
                 mProgressBar.setVisibility(ProgressBar.VISIBLE);
                 mButtonDetect.setText(getString(R.string.run_model));
 
@@ -199,13 +210,41 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                 mStartX = (mImageView.getWidth() - mIvScaleX * mBitmap.getWidth())/2;
                 mStartY = (mImageView.getHeight() -  mIvScaleY * mBitmap.getHeight())/2;
 
+                yolo = true;
+
+                Thread thread = new Thread(MainActivity.this);
+                thread.start();
+            }
+        });
+
+        mEppButtonDetect = findViewById(R.id.detectEppButton);
+        mEppProgressBar = (ProgressBar) findViewById(R.id.eppProgressBar);
+        mEppButtonDetect.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                mEppButtonDetect.setEnabled(false);
+                mButtonDetect.setEnabled(false);
+                mEppProgressBar.setVisibility(ProgressBar.VISIBLE);
+                mEppButtonDetect.setText(getString(R.string.run_model));
+
+                mImgScaleX = (float)mBitmap.getWidth() / PrePostProcessor.mInputWidth;
+                mImgScaleY = (float)mBitmap.getHeight() / PrePostProcessor.mInputHeight;
+
+                mIvScaleX = (mBitmap.getWidth() > mBitmap.getHeight() ? (float)mImageView.getWidth() / mBitmap.getWidth() : (float)mImageView.getHeight() / mBitmap.getHeight());
+                mIvScaleY  = (mBitmap.getHeight() > mBitmap.getWidth() ? (float)mImageView.getHeight() / mBitmap.getHeight() : (float)mImageView.getWidth() / mBitmap.getWidth());
+
+                mStartX = (mImageView.getWidth() - mIvScaleX * mBitmap.getWidth())/2;
+                mStartY = (mImageView.getHeight() -  mIvScaleY * mBitmap.getHeight())/2;
+
+                yolo = false;
+
                 Thread thread = new Thread(MainActivity.this);
                 thread.start();
             }
         });
 
         try {
-            mModule = LiteModuleLoader.load(MainActivity.assetFilePath(getApplicationContext(), "yolov5x.torchscript.ptl"));
+//            mModule = LiteModuleLoader.load(MainActivity.assetFilePath(getApplicationContext(), "yolov5x.torchscript.ptl"));
+            mModule = LiteModuleLoader.load(MainActivity.assetFilePath(getApplicationContext(), "yolov5snulls.torchscript.ptl"));
             BufferedReader br = new BufferedReader(new InputStreamReader(getAssets().open("classes.txt")));
             String line;
             List<String> classes = new ArrayList<>();
@@ -270,17 +309,33 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         final Tensor outputTensor = outputTuple[0].toTensor();
         final float[] outputs = outputTensor.getDataAsFloatArray();
         final ArrayList<Result> results =  PrePostProcessor.outputsToNMSPredictions(outputs, mImgScaleX, mImgScaleY, mIvScaleX, mIvScaleY, mStartX, mStartY);
-        AlgoritmoDecision algo = new AlgoritmoDecision(results, false);
-        final ArrayList<EPPResult> eppResults = algo.getResultadosProcesados();
 
-        runOnUiThread(() -> {
-            mButtonDetect.setEnabled(true);
-            mButtonDetect.setText(getString(R.string.detect));
-            mProgressBar.setVisibility(ProgressBar.INVISIBLE);
-            mResultView.setResults(eppResults);
-            mResultView.invalidate();
-            mResultView.setVisibility(View.VISIBLE);
-        });
+        if(yolo) {
+            runOnUiThread(() -> {
+                mButtonDetect.setEnabled(true);
+                mEppButtonDetect.setEnabled(true);
+                mButtonDetect.setText(getString(R.string.detect));
+                mProgressBar.setVisibility(ProgressBar.INVISIBLE);
+                mResultView.setResults(results);
+                mResultView.invalidate();
+                mResultView.setVisibility(View.VISIBLE);
+                mEppResultView.setVisibility(View.INVISIBLE);
+            });
+        } else {
+            AlgoritmoDecision algo = new AlgoritmoDecision(results, false);
+            final ArrayList<EPPResult> eppResults = algo.getResultadosProcesados();
+            runOnUiThread(() -> {
+                mButtonDetect.setEnabled(true);
+                mEppButtonDetect.setEnabled(true);
+                mEppButtonDetect.setText(getString(R.string.detect_epp));
+                mEppProgressBar.setVisibility(ProgressBar.INVISIBLE);
+                mEppResultView.setResults(eppResults);
+                mEppResultView.invalidate();
+                mResultView.setVisibility(View.INVISIBLE);
+                mEppResultView.setVisibility(View.VISIBLE);
+            });
+        }
+
     }
 
     /**

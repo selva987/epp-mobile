@@ -18,7 +18,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <org.ugd.epp.EPPResultView
+    <org.pytorch.demo.objectdetection.ResultView
         android:id="@+id/resultView"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -28,6 +28,26 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <org.ugd.epp.EPPResultView
+        android:id="@+id/eppResultView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="60dp"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/testButton"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:textAllCaps="false"
+        app:layout_constraintEnd_toStartOf="@id/detectButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/imageView" />
+
     <Button
         android:id="@+id/detectButton"
         android:layout_width="wrap_content"
@@ -35,9 +55,9 @@
         android:layout_marginTop="20dp"
         android:text="@string/detect"
         android:textAllCaps="false"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/testButton"
+        app:layout_constraintEnd_toStartOf="@id/detectEppButton"
         app:layout_constraintHorizontal_bias="0.498"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/imageView" />
 
 
@@ -47,22 +67,35 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:visibility="invisible"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/testButton"
+        app:layout_constraintEnd_toStartOf="@id/detectEppButton"
         app:layout_constraintHorizontal_bias="0.498"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/imageView" />
 
     <Button
-        android:id="@+id/testButton"
-        android:layout_width="100dp"
+        android:id="@+id/detectEppButton"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="20dp"
+        android:text="@string/detect_epp"
         android:textAllCaps="false"
+        app:layout_constraintStart_toEndOf="@id/detectButton"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/selectButton"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/detectButton" />
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintTop_toBottomOf="@+id/imageView" />
+
+
+    <ProgressBar
+        android:id="@+id/eppProgressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:visibility="invisible"
+        app:layout_constraintStart_toEndOf="@id/detectButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintTop_toBottomOf="@+id/imageView" />
+
 
     <Button
         android:id="@+id/selectButton"
@@ -70,11 +103,11 @@
         android:layout_height="wrap_content"
         android:text="@string/select"
         android:textAllCaps="false"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/liveButton"
+        android:layout_marginTop="20dp"
         app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/testButton"
-        app:layout_constraintTop_toTopOf="@+id/testButton" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/liveButton"
+        app:layout_constraintTop_toBottomOf="@+id/testButton" />
 
     <Button
         android:id="@+id/liveButton"
@@ -82,10 +115,11 @@
         android:layout_height="wrap_content"
         android:text="@string/live"
         android:textAllCaps="false"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
+        android:layout_marginTop="20dp"
         app:layout_constraintStart_toEndOf="@+id/selectButton"
-        app:layout_constraintTop_toTopOf="@+id/selectButton" />
+        app:layout_constraintEnd_toStartOf="@id/liveEPPButton"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintTop_toBottomOf="@+id/detectButton" />
 
     <Button
         android:id="@+id/liveEPPButton"
@@ -93,9 +127,10 @@
         android:layout_height="wrap_content"
         android:text="@string/live_epp"
         android:textAllCaps="false"
+        android:layout_marginTop="20dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/liveButton"
-        app:layout_constraintTop_toTopOf="@+id/liveButton" />
+        app:layout_constraintTop_toBottomOf="@+id/detectButton" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
